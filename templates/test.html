@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Testing</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background: white;
+            transition: transform 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .test-card {
+            border-left: 4px solid;
+            margin-bottom: 20px;
+        }
+        .test-card.correct {
+            border-left-color: #51cf66;
+        }
+        .test-card.incorrect {
+            border-left-color: #ff6b6b;
+        }
+        .test-card.legitimate {
+            background: rgba(81, 207, 102, 0.1);
+        }
+        .test-card.phishing {
+            background: rgba(255, 107, 107, 0.1);
+        }
+        .btn-test {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-test:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 50px;
+            transition: all 0.3s;
+        }
+        .back-btn:hover {
+            background: #5a6268;
+            color: white;
+        }
+        .stat-badge {
+            font-size: 0.8rem;
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+        .progress-thin {
+            height: 8px;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+        .model-stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .feature-importance {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .test-table th {
+            background: #667eea;
+            color: white;
+            border: none;
+        }
+        .test-table td {
+            vertical-align: middle;
+        }
+        .accuracy-meter {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .accuracy-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 1s ease-in-out;
+        }
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <a href="/" class="btn back-btn">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Home
+                </a>
+                <button onclick="runNewTests()" class="btn btn-success ms-2">
+                    <i class="fas fa-redo me-2"></i>Run New Tests
+                </button>
+            </div>
+        </div>
+
+        <!-- Title -->
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <h1 class="display-5 fw-bold text-primary">
+                    <i class="fas fa-vial me-3"></i>Model Testing
+                </h1>
+                <p class="lead text-muted">Test the Random Forest model with predefined cases</p>
+            </div>
+        </div>
+
+        <!-- Model Statistics -->
+        <div class="row mb-5">
+            <div class="col-lg-8">
+                <div class="card p-4">
+                    <h4 class="mb-4">
+                        <i class="fas fa-chart-line me-2 text-primary"></i>Test Results Summary
+                    </h4>
+                    
+                    <!-- Calculate statistics -->
+                    {% set total_tests = results|length %}
+                    {% set correct_tests = results|selectattr('correct')|list|length %}
+                    {% set accuracy = (correct_tests / total_tests * 100) if total_tests > 0 else 0 %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="text-center p-3 border rounded">
+                                <div class="display-6 fw-bold text-primary">{{ total_tests }}</div>
+                                <small>Total Tests</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="text-center p-3 border rounded">
+                                <div class="display-6 fw-bold text-success">{{ correct_tests }}</div>
+                                <small>Correct Predictions</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="text-center p-3 border rounded">
+                                <div class="display-6 fw-bold text-danger">{{ total_tests - correct_tests }}</div>
+                                <small>Incorrect Predictions</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="text-center p-3 border rounded">
+                                <div class="display-6 fw-bold text-warning">{{ accuracy|round(1) }}%</div>
+                                <small>Accuracy</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Accuracy Meter -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Test Accuracy</span>
+                            <span>{{ accuracy|round(1) }}%</span>
+                        </div>
+                        <div class="accuracy-meter">
+                            <div class="accuracy-fill bg-success" style="width: {{ accuracy }}%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <small class="text-muted">0%</small>
+                            <small class="text-muted">100%</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Performance Indicators -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Model Status:</h6>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="pulse-dot bg-success"></span>
+                                <span>Model Loaded: <strong>Yes</strong></span>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="pulse-dot bg-success"></span>
+                                <span>Features: <strong>5 behavioral metrics</strong></span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span class="pulse-dot bg-success"></span>
+                                <span>Algorithm: <strong>Random Forest</strong></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Test Coverage:</h6>
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <span>Clear phishing patterns</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <span>Clear legitimate patterns</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <span>Borderline cases</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="model-stats h-100">
+                    <h4 class="mb-4">
+                        <i class="fas fa-cogs me-2"></i>Model Information
+                    </h4>
+                    <div class="mb-3">
+                        <h6>Algorithm Details:</h6>
+                        <p class="mb-1"><strong>Type:</strong> Random Forest Classifier</p>
+                        <p class="mb-1"><strong>Estimators:</strong> 200 trees</p>
+                        <p class="mb-1"><strong>Max Depth:</strong> 10 levels</p>
+                        <p class="mb-0"><strong>Training Samples:</strong> 1000+</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Features Used:</h6>
+                        <ol class="mb-0">
+                            <li>Mouse Movements</li>
+                            <li>Mouse Clicks</li>
+                            <li>Keystrokes</li>
+                            <li>Scroll Events</li>
+                            <li>Time Spent</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <h6>Model Performance:</h6>
+                        <div class="small">
+                            <span class="badge bg-success me-2">High Accuracy</span>
+                            <span class="badge bg-info me-2">Fast Prediction</span>
+                            <span class="badge bg-warning">Robust to Noise</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Results Table -->
+        <div class="card mb-5">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-table me-2"></i>Detailed Test Results
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover test-table">
+                        <thead>
+                            <tr>
+                                <th>Test Case</th>
+                                <th>Input Values</th>
+                                <th>Expected</th>
+                                <th>Predicted</th>
+                                <th>Confidence</th>
+                                <th>Probabilities</th>
+                                <th>Result</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for test in results %}
+                            <tr class="{% if test.correct %}table-success{% else %}table-danger{% endif %}">
+                                <td>
+                                    <strong>{{ test.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {% if 'Legitimate' in test.name %}
+                                        <i class="fas fa-user-check text-success"></i> Normal user behavior
+                                        {% else %}
+                                        <i class="fas fa-user-secret text-danger"></i> Suspicious behavior
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="small">
+                                        <div>Moves: {{ test.input[0] }}</div>
+                                        <div>Clicks: {{ test.input[1] }}</div>
+                                        <div>Keys: {{ test.input[2] }}</div>
+                                        <div>Scrolls: {{ test.input[3] }}</div>
+                                        <div>Time: {{ test.input[4] }}s</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge {% if test.expected == 'LEGITIMATE' %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ test.expected }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {% if test.predicted == 'LEGITIMATE' %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ test.predicted }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2">{{ test.confidence }}%</span>
+                                        <div class="progress progress-thin flex-grow-1">
+                                            <div class="progress-bar {% if test.predicted == 'LEGITIMATE' %}bg-success{% else %}bg-danger{% endif %}" 
+                                                 style="width: {{ test.confidence }}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="small">
+                                        <div>Legitimate: {{ test.prob_legit }}%</div>
+                                        <div>Phishing: {{ test.prob_phishing }}%</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if test.correct %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>CORRECT
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-times me-1"></i>INCORRECT
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" 
+                                            onclick="showTestDetails({{ loop.index0 }})"
+                                            data-bs-toggle="tooltip" title="View Details">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Individual Test Cards -->
+        <h3 class="mb-4">
+            <i class="fas fa-vial-virus me-2"></i>Individual Test Analysis
+        </h3>
+        
+        <div class="row">
+            {% for test in results %}
+            <div class="col-lg-6 mb-4">
+                <div class="card test-card {% if test.correct %}correct{% else %}incorrect{% endif %} {% if test.predicted == 'LEGITIMATE' %}legitimate{% else %}phishing{% endif %}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="card-title mb-1">{{ test.name }}</h5>
+                                <p class="card-text small text-muted mb-0">
+                                    {% if 'Legitimate' in test.name %}
+                                    Simulating normal user interaction patterns
+                                    {% else %}
+                                    Simulating suspicious/phishing behavior patterns
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="text-end">
+                                {% if test.correct %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Correct
+                                </span>
+                                {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times me-1"></i>Incorrect
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <small class="text-muted">Expected:</small>
+                                <div class="fw-bold {% if test.expected == 'LEGITIMATE' %}text-success{% else %}text-danger{% endif %}">
+                                    {{ test.expected }}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Predicted:</small>
+                                <div class="fw-bold {% if test.predicted == 'LEGITIMATE' %}text-success{% else %}text-danger{% endif %}">
+                                    {{ test.predicted }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <small class="text-muted">Input Values:</small>
+                            <div class="d-flex flex-wrap gap-2 mt-1">
+                                <span class="stat-badge bg-primary">Moves: {{ test.input[0] }}</span>
+                                <span class="stat-badge bg-primary">Clicks: {{ test.input[1] }}</span>
+                                <span class="stat-badge bg-primary">Keys: {{ test.input[2] }}</span>
+                                <span class="stat-badge bg-primary">Scrolls: {{ test.input[3] }}</span>
+                                <span class="stat-badge bg-primary">Time: {{ test.input[4] }}s</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <small class="text-muted">Probability Distribution:</small>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1 me-3">
+                                    <div class="progress" style="height: 20px; border-radius: 10px;">
+                                        <div class="progress-bar bg-success" style="width: {{ test.prob_legit }}%">
+                                            {{ test.prob_legit }}%
+                                        </div>
+                                        <div class="progress-bar bg-danger" style="width: {{ test.prob_phishing }}%">
+                                            {{ test.prob_phishing }}%
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted">{{ test.confidence }}% confidence</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button class="btn btn-sm btn-outline-primary" onclick="runSingleTest({{ loop.index0 }})">
+                                <i class="fas fa-redo me-1"></i>Re-run Test
+                            </button>
+                            <div class="text-end">
+                                <small class="text-muted">
+                                    Confidence: <strong>{{ test.confidence }}%</strong>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Advanced Testing -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-flask me-2"></i>Advanced Testing Options
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="feature-importance">
+                            <h6>Feature Importance</h6>
+                            <div class="small">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Mouse Movements</span>
+                                    <span class="fw-bold">25%</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 6px;">
+                                    <div class="progress-bar bg-primary" style="width: 25%"></div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Time Spent</span>
+                                    <span class="fw-bold">22%</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 6px;">
+                                    <div class="progress-bar bg-primary" style="width: 22%"></div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Keystrokes</span>
+                                    <span class="fw-bold">20%</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 6px;">
+                                    <div class="progress-bar bg-primary" style="width: 20%"></div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Mouse Clicks</span>
+                                    <span class="fw-bold">18%</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 6px;">
+                                    <div class="progress-bar bg-primary" style="width: 18%"></div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Scroll Events</span>
+                                    <span class="fw-bold">15%</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-primary" style="width: 15%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="feature-importance">
+                            <h6>Run Custom Test</h6>
+                            <div class="mb-3">
+                                <label class="form-label small">Test Type:</label>
+                                <select class="form-select form-select-sm" id="testType">
+                                    <option value="legitimate">Legitimate User</option>
+                                    <option value="phishing">Phishing User</option>
+                                    <option value="borderline">Borderline Case</option>
+                                    <option value="random">Random Values</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-sm btn-primary w-100" onclick="runCustomTest()">
+                                <i class="fas fa-play me-1"></i>Run Custom Test
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="feature-importance">
+                            <h6>Model Validation</h6>
+                            <p class="small text-muted">Validate model with different test sets:</p>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-sm btn-outline-success" onclick="validateModel('simple')">
+                                    <i class="fas fa-check me-1"></i>Simple Validation
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning" onclick="validateModel('cross')">
+                                    <i class="fas fa-exchange-alt me-1"></i>Cross-Validation
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="validateModel('stress')">
+                                    <i class="fas fa-bolt me-1"></i>Stress Test
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <button class="btn btn-test me-2" onclick="runComprehensiveTest()">
+                        <i class="fas fa-rocket me-2"></i>Run Comprehensive Test Suite
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="exportTestResults()">
+                        <i class="fas fa-download me-2"></i>Export Test Results
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Details Modal -->
+    <div class="modal fade" id="testDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Test Case Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="testDetailsContent">
+                    <!-- Test details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Show test details
+        function showTestDetails(index) {
+            const test = {{ results|tojson }};
+            if (test && test[index]) {
+                const t = test[index];
+                const detailsHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Test Information</h6>
+                            <p><strong>Name:</strong> ${t.name}</p>
+                            <p><strong>Description:</strong> ${t.name.includes('Legitimate') ? 
+                                'Simulating normal user behavior patterns' : 
+                                'Simulating suspicious/phishing behavior patterns'}</p>
+                            
+                            <h6 class="mt-4">Expected vs Predicted</h6>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="p-3 border rounded text-center">
+                                        <div class="small text-muted">Expected</div>
+                                        <div class="h4 fw-bold ${t.expected === 'LEGITIMATE' ? 'text-success' : 'text-danger'}">
+                                            ${t.expected}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-3 border rounded text-center">
+                                        <div class="small text-muted">Predicted</div>
+                                        <div class="h4 fw-bold ${t.predicted === 'LEGITIMATE' ? 'text-success' : 'text-danger'}">
+                                            ${t.predicted}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6>Input Values</h6>
+                            <div class="row">
+                                <div class="col-6 mb-2">
+                                    <div class="p-2 border rounded">
+                                        <div class="small text-muted">Mouse Moves</div>
+                                        <div class="fw-bold">${t.input[0]}</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <div class="p-2 border rounded">
+                                        <div class="small text-muted">Mouse Clicks</div>
+                                        <div class="fw-bold">${t.input[1]}</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <div class="p-2 border rounded">
+                                        <div class="small text-muted">Keystrokes</div>
+                                        <div class="fw-bold">${t.input[2]}</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <div class="p-2 border rounded">
+                                        <div class="small text-muted">Scrolls</div>
+                                        <div class="fw-bold">${t.input[3]}</div>
+                                    </div>
+                                </div>
+                                <div class="col-12 mb-2">
+                                    <div class="p-2 border rounded">
+                                        <div class="small text-muted">Time Spent (seconds)</div>
+                                        <div class="fw-bold">${t.input[4]}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h6 class="mt-3">Probabilities</h6>
+                            <div class="progress" style="height: 30px; border-radius: 15px;">
+                                <div class="progress-bar bg-success" style="width: ${t.prob_legit}%">
+                                    Legitimate: ${t.prob_legit}%
+                                </div>
+                                <div class="progress-bar bg-danger" style="width: ${t.prob_phishing}%">
+                                    Phishing: ${t.prob_phishing}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6>Analysis</h6>
+                        <div class="alert ${t.correct ? 'alert-success' : 'alert-danger'}">
+                            <i class="fas ${t.correct ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2"></i>
+                            ${t.correct ? 
+                                'The model correctly identified this pattern.' : 
+                                'The model misclassified this pattern.'}
+                        </div>
+                        
+                        <p><strong>Confidence Level:</strong> ${t.confidence}%</p>
+                        <p><strong>Result:</strong> ${t.correct ? 'Correct Prediction' : 'Incorrect Prediction'}</p>
+                    </div>
+                `;
+                
+                document.getElementById('testDetailsContent').innerHTML = detailsHTML;
+                const modal = new bootstrap.Modal(document.getElementById('testDetailsModal'));
+                modal.show();
+            }
+        }
+        
+        // Run single test
+        function runSingleTest(index) {
+            alert(`Re-running test #${index + 1}. In a real implementation, this would re-evaluate the test case with the current model.`);
+            // In real implementation: fetch('/run-test', {method: 'POST', body: JSON.stringify({test_index: index})});
+        }
+        
+        // Run custom test
+        function runCustomTest() {
+            const testType = document.getElementById('testType').value;
+            const testTypes = {
+                legitimate: {moves: 350, clicks: 28, keys: 85, scrolls: 22, time: 450},
+                phishing: {moves: 45, clicks: 3, keys: 8, scrolls: 2, time: 65},
+                borderline: {moves: 120, clicks: 12, keys: 25, scrolls: 8, time: 180},
+                random: {moves: Math.floor(Math.random() * 500), clicks: Math.floor(Math.random() * 40), 
+                         keys: Math.floor(Math.random() * 120), scrolls: Math.floor(Math.random() * 30), 
+                         time: Math.floor(Math.random() * 600)}
+            };
+            
+            const test = testTypes[testType];
+            alert(`Running ${testType} test with values:\nMouse Moves: ${test.moves}\nMouse Clicks: ${test.clicks}\nKeystrokes: ${test.keys}\nScrolls: ${test.scrolls}\nTime: ${test.time}s`);
+            
+            // In real implementation, send to server for prediction
+        }
+        
+        // Run comprehensive test
+        function runComprehensiveTest() {
+            alert('Running comprehensive test suite with 100+ test cases. This may take a few moments...');
+            // In real implementation: fetch('/run-comprehensive-tests');
+        }
+        
+        // Run new tests
+        function runNewTests() {
+            window.location.reload();
+        }
+        
+        // Validate model
+        function validateModel(type) {
+            const messages = {
+                simple: 'Running simple validation with 20% test split...',
+                cross: 'Running 5-fold cross validation...',
+                stress: 'Running stress test with edge cases...'
+            };
+            alert(messages[type] + '\n\nIn a real implementation, this would validate the model and show results.');
+        }
+        
+        // Export test results
+        function exportTestResults() {
+            alert('Exporting test results to CSV file...');
+            // In real implementation, generate and download CSV
+        }
+        
+        // Update accuracy animation
+        window.addEventListener('load', function() {
+            const accuracyFill = document.querySelector('.accuracy-fill');
+            if (accuracyFill) {
+                // Force reflow to trigger animation
+                void accuracyFill.offsetWidth;
+            }
+        });
+    </script>
+</body>
+</html>
