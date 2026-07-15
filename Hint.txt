@@ -1,9 +1,0 @@
-Threshold Values (From THRESHOLDS in app.py)
-The system compares your behavior against these thresholds:
-
-Behavior	Phishing (Suspicious)		Legitimate (Normal)
-Mouse Moves	< 100		> 200
-Mouse Clicks	< 10		> 15
-Keystrokes		< 15		> 30
-Scrolls		< 5		> 10
-Time Spent	< 120 seconds	> 240 seconds
