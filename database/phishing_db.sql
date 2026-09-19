@@ -52,10 +52,10 @@ CREATE TABLE IF NOT EXISTS `auto_sessions` (
 --
 
 INSERT INTO `auto_sessions` (`id`, `session_id`, `username`, `mouse_moves`, `mouse_clicks`, `keystrokes`, `scrolls`, `time_spent`, `start_time`, `end_time`, `prediction_result`, `confidence`, `page_url`) VALUES
-(1, 'a11bdd48-9bf7-40d7-9e1c-173e9c0bc1f3', 'amsasi@gmail.com', 2, 9, 8, 1, 27, '2026-01-17 14:13:01', '2026-01-17 14:13:28', 'PHISHING WEBSITE', '100.00', 'Dummy Login Page - Auto Detection'),
-(2, 'a5ce5d21-5b65-4c7b-93f7-cebc305ba8ff', 'amsasi@gmail.com', 0, 1, 12, 0, 7, '2026-01-17 14:13:42', '2026-01-17 14:13:50', 'PHISHING WEBSITE', '100.00', 'Dummy Login Page - Auto Detection'),
-(3, '918c5e0f-5a48-4fc6-b35e-90875fd9c578', 'amsasi@gmail.com', 0, 4, 8, 0, 10, '2026-01-17 14:14:33', '2026-01-17 14:14:44', 'PHISHING WEBSITE', '100.00', 'Dummy Login Page - Auto Detection'),
-(4, '658c4a77-37f1-44fc-81d0-0423a3d520c5', 'amsasi@gmail.com', 208, 36, 46, 22, 218, '2026-01-17 14:24:18', '2026-01-17 14:27:56', 'LEGITIMATE WEBSITE', '100.00', 'Dummy Login Page - Auto Detection');
+(1, 'a11bdd48-9bf7-40d7-9e1c-173e9c0bc1f3', 'test@example.com', 2, 9, 8, 1, 27, '2026-01-17 14:13:01', '2026-01-17 14:13:28', 'PHISHING WEBSITE', '100.00', 'Dummy Login Page - Auto Detection'),
+(2, 'a5ce5d21-5b65-4c7b-93f7-cebc305ba8ff', 'test@example.com', 0, 1, 12, 0, 7, '2026-01-17 14:13:42', '2026-01-17 14:13:50', 'PHISHING WEBSITE', '100.00', 'Dummy Login Page - Auto Detection'),
+(3, '918c5e0f-5a48-4fc6-b35e-90875fd9c578', 'test@example.com', 0, 4, 8, 0, 10, '2026-01-17 14:14:33', '2026-01-17 14:14:44', 'PHISHING WEBSITE', '100.00', 'Dummy Login Page - Auto Detection'),
+(4, '658c4a77-37f1-44fc-81d0-0423a3d520c5', 'test@example.com', 208, 36, 46, 22, 218, '2026-01-17 14:24:18', '2026-01-17 14:27:56', 'LEGITIMATE WEBSITE', '100.00', 'Dummy Login Page - Auto Detection');
 
 -- --------------------------------------------------------
 
